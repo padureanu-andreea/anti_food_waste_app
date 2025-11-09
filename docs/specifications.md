@@ -99,7 +99,7 @@ Cum se face revendicarea: Notificare push, ulterioară confirmării de către do
 Partea 6: Integrare Social Media
 Conectare Conturi: În "Setări", utilizatorul își poate conecta conturile de Facebook și Instagram (folosind API-urile oficiale).
 
-Opțiune de Postare: Când un utilizator marchează un produs ca Disponibil pentru Partajare, pe lângă selectarea grupurilor (F.4.5), va avea și opțiunea (checkbox) de a posta pe rețelele sociale.
+Opțiune de Postare: Când un utilizator marchează un produs ca Disponibil pentru Partajare, pe lângă selectarea grupurilor, va avea și opțiunea (checkbox) de a posta pe rețelele sociale.
 
 Generare Postare: Aplicația va genera automat un format de postare:
 
