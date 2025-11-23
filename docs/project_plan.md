@@ -2,15 +2,15 @@ Plan de Proiect
 
 În cele ce urmează sunt detaliate aspectele tehnice și planificarea temporală pentru implementarea aplicației.
 
-4.1. Arhitectura Tehnică Aleasă
+1. Arhitectura Tehnică Aleasă
 
-Pentru dezvoltarea aplicației am ales următorul stack tehnologic:
+Pentru dezvoltarea aplicației vom folosi următoarele tehnologii:
 
-Frontend: React.js
+  Frontend: React.js
 
-Backend: Node.js (Express.js)
+  Backend: Node.js (Express.js)
 
-Bază de Date: PostgreSQL
+  Bază de Date: PostgreSQL
 
 4.2. Arhitectura Bazei de Date (Schema Relațională Inițială)
 
