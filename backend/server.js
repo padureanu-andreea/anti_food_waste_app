@@ -4,7 +4,7 @@ const app = express();
 const port = 3000;
 
 // Sequelize Initialisation
-const sequelize = require("./sequelize");
+const sequelize = require("./config/db");
 
 // Import created models
 
