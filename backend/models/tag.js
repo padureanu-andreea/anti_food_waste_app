@@ -1,4 +1,4 @@
-const sequelize = require('../config/sequelize');
+const sequelize = require('../config/db');
 const { DataTypes } = require('sequelize');
 
 const Tag = sequelize.define('Tag',{
