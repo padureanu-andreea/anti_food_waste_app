@@ -4,7 +4,7 @@ const app = express();
 const port = 3000;
 
 // Sequelize Initialisation
-const sequelize = require("./sequelize");
+const sequelize = require("./config/sequelize");
 
 // Import created models
 const User = require('./User');
@@ -12,6 +12,7 @@ const Group = require('./Group');
 const Tag = require('./Tag');
 const GroupMember = require('./GroupMember');
 const UserTag = require('./UserTag');
+
 
 // Define relationship
 
