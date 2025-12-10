@@ -4,14 +4,14 @@ const app = express();
 const port = 3000;
 
 // Sequelize Initialisation
-const sequelize = require("./config/sequelize");
+const sequelize = require("./config/db");
 
 // Import created models
 const User = require('./User');
 const Group = require('./Group');
 const Tag = require('./Tag');
 const GroupMember = require('./GroupMember');
-const UserTag = require('./UserTag');
+const GroupMemberTag = require('./GroupMemberTag');
 
 
 // Define relationship
@@ -50,26 +50,16 @@ User.hasMany(Group, {
   foreignKey: 'ownerId'
 });
 
-// Un user poate avea multe taguri (Vegetarian, Vegan, etc.)
-User.belongsToMany(Tag, {
-  through: UserTag,
-  foreignKey: 'userId',
-  otherKey: 'tagId'
-});
 
-// Un tag poate aparține multor useri
-Tag.belongsToMany(User, {
-  through: UserTag,
-  foreignKey: 'tagId',
-  otherKey: 'userId'
-});
+// Taguri aplicate membrilor unui grup
+GroupMemberTag.belongsTo(Group, { foreignKey: 'groupId' });
+GroupMemberTag.belongsTo(User, { foreignKey: 'memberId' });
+GroupMemberTag.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+GroupMemberTag.belongsTo(Tag, { foreignKey: 'tagId' });
 
-// Relații directe (lucrul cu tabela intermediară)
-UserTag.belongsTo(User, { foreignKey: 'userId' });
-UserTag.belongsTo(Tag, { foreignKey: 'tagId' });
-
-User.hasMany(UserTag, { foreignKey: 'userId' });
-Tag.hasMany(UserTag, { foreignKey: 'tagId' });
+Group.hasMany(GroupMemberTag, { foreignKey: 'groupId' });
+User.hasMany(GroupMemberTag, { foreignKey: 'memberId' });
+Tag.hasMany(GroupMemberTag, { foreignKey: 'tagId' });
 
 
 
