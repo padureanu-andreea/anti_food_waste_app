@@ -9,30 +9,49 @@ const Product = sequelize.define('Product', {
     },
     ownerId: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: false,
+        validate: {
+            notNull: true,
+            isInt: true
+        }
     },
     name: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
+        validate: {
+            notEmpty: true
+        }
     },
     category: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
+        validate: {
+            notEmpty: true
+        }
     },
     quantity: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
+        validate: {
+            notEmpty: true
+        }
     },
     expiryDate: {
         type: DataTypes.DATEONLY,
-        allowNull: false
+        allowNull: false,
+        validate: {
+            isDate: true
+        }
     },
     notes: {
         type: DataTypes.TEXT
     },
     status: {
         type: DataTypes.ENUM('available', 'claimed', 'consumed', 'trashed'),
-        defaultValue: 'available'
+        defaultValue: 'available',
+        validate: {
+            isIn: [['available', 'claimed', 'consumed', 'trashed']]
+        }
     }
 });
 
