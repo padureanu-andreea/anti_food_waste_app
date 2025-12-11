@@ -2,6 +2,8 @@ const express = require("express");
 const { sequelize } = require("./models");
 
 const productRoutes = require("./routes/productRoutes");
+const claimRoutes = require("./routes/claimRoutes");
+const integrationRoutes = require("./routes/integrationRoutes");
 
 const app = express();
 const port = 3000;
@@ -10,6 +12,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 app.use('/products', productRoutes);
+app.use('/claims', claimRoutes);
+app.use('/integrations', integrationRoutes);
 
 app.listen(port, () => {
   console.log("The server is running on http://localhost:" + port);
