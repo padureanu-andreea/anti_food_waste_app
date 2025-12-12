@@ -1,7 +1,7 @@
 const { Op } = require("sequelize")
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
-const JWT_SECRET = process.env.JWST_SECRET
+const JWT_SECRET = process.env.JWT_SECRET
 
 
 const User = require("../models/user")
