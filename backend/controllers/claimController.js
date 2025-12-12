@@ -1,6 +1,5 @@
 const { Claim, Product, User } = require('../models');
 
-// Revendicarea unui produs (POST /products/:id/claims)
 const createClaim = async (req, res) => {
     try {
         const { id } = req.params; 
@@ -26,7 +25,6 @@ const createClaim = async (req, res) => {
     }
 };
 
-// Lista revendicărilor (GET /claims?as=claimer SAU ?as=owner)
 const getClaims = async (req, res) => {
     try {
         const { as, userId } = req.query; 
@@ -64,7 +62,6 @@ const getClaims = async (req, res) => {
     }
 };
 
-// Revendicări pentru un produs anume (GET /products/:id/claims)
 const getClaimsForProduct = async (req, res) => {
     try {
         const { id } = req.params;
@@ -78,7 +75,6 @@ const getClaimsForProduct = async (req, res) => {
     }
 };
 
-// Acceptarea / Respingerea (PATCH /claims/:id)
 const updateClaimStatus = async (req, res) => {
     try {
         const { id } = req.params; 
