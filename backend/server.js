@@ -1,6 +1,7 @@
 const express = require("express");
 const { sequelize } = require("./models");
 
+//import all routers
 const inventoryRoutes = require("./routes/inventoryRoutes");
 const claimRoutes = require("./routes/claimRoutes");
 const integrationRoutes = require("./routes/integrationRoutes");
@@ -17,7 +18,7 @@ const port = 3000;
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-//aici pun base path
+//base path for each router
 app.use("/auth",authRouter)
 app.use("/products", productRouter)
 app.use("/feed", feedRouter)
@@ -28,7 +29,7 @@ app.use('/claims', claimRoutes);
 app.use('/integrations', integrationRoutes);
 app.use("/tags", tagRoutes);
 
-// Ruta de test și sync DB 
+// GET localhost:3000/ -> for testing the conection and also to create the data base
 app.get("/", async (req, res, next) => {
   try {
     await sequelize.sync({ force: true });
@@ -38,7 +39,7 @@ app.get("/", async (req, res, next) => {
   }
 });
 
-// Middleware pentru erori
+// Middleware for errors
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({ message: "Server Error" });

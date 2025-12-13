@@ -5,9 +5,15 @@ const JWT_SECRET = process.env.JWT_SECRET
 
 
 const User = require("../models/user")
-// const { get } = require("../routes/authRouter")
 
 
+//POST /auth/register
+/*
+ * Registers a new user.
+ * * This function first normalizes the email address. It then checks the database to ensure
+ * that neither the username nor the email is already in use. If the credentials are unique,
+ * it hashes the password using bcrypt for security and creates the new user record.
+ */
 const createUser = async (req, res, next) => {
     try {
 
@@ -50,7 +56,14 @@ const createUser = async (req, res, next) => {
 }
 
 
-
+//POST /auth/login
+/*
+ * Authenticates a user (Login).
+ * * This function handles the login process. It allows users to sign in using either 
+ * their username or their email address. It retrieves the user, verifies the provided 
+ * password against the stored hash, and if successful, generates a JWT token 
+ * (valid for 7 days) to be used for subsequent authorized requests.
+ */
 const searchUser = async (req, res, next) => {
     try {
 
@@ -95,7 +108,13 @@ const searchUser = async (req, res, next) => {
     }
 }
 
-
+// PATCH /auth/me
+/*
+ * Updates the current user's profile.
+ * * This function allows a logged-in user to update their allowed profile fields 
+ * (username, phone, bio). It performs a validation check to ensure that if the 
+ * username is being changed, the new username does not conflict with an existing one.
+ */
 const editUser = async (req, res, next) => {
     try {
         const user = req.user
@@ -145,6 +164,13 @@ const editUser = async (req, res, next) => {
     }
 }
 
+//GET /auth/me
+/*
+ * Retrieves the current user's profile information.
+ * * This function returns the details (ID, username, email, phone, bio) of the 
+ * user currently authenticated by the token. It relies on the 'authMiddleware' 
+ * to have already populated 'req.user'.
+ */
 const getMe = async (req, res, next) => {
 
     //preluat de la middleware
@@ -161,10 +187,15 @@ const getMe = async (req, res, next) => {
 }
 
 
-//rute ajutatoare pentru verificari
-// get all users
-// get user by username
+// ===== General Routes =====
 
+// GET /auth/users
+/*
+ * Fetches a list of all users.
+ * * This function retrieves all users from the database but filters the output 
+ * to return only public information (id, username, email, phone, bio), 
+ * strictly excluding sensitive data like password hashes.
+ */
 const getAllUsers = async (req, res, next) => {
   try {
     const users = await User.findAll({
@@ -176,6 +207,12 @@ const getAllUsers = async (req, res, next) => {
   }
 };
 
+//GET /auth/users/:username
+/*
+ * Searches for a specific user by username.
+ * * This function looks up a user based on the username parameter provided in the URL.
+ * If found, it returns their public profile information; otherwise, it returns a 404 error.
+ */
 const getUserByUsername = async (req, res, next) => {
   try {
     const { username } = req.params;

@@ -3,6 +3,14 @@ const ProductVisibility = require("../models/productVisibility")
 const Group = require("../models/group")
 const { Op } = require("sequelize")
 
+// POST /products/:id/share
+/*
+ * Shares a product with one or more groups.
+ * * This function manages the visibility of a product. It verifies that the user owns the product, 
+ * then updates the sharing settings. Note that this implementation overwrites existing shares: 
+ * it first removes all current visibility records for the product and then creates new ones 
+ * based on the provided 'groupIds' array.
+ */
 const postProductToGroup = async (req, res, next) => {
     try {
         const productId = Number(req.params.id)
@@ -42,6 +50,13 @@ const postProductToGroup = async (req, res, next) => {
     }
 }
 
+// GET /products/:id/visibility
+/*
+ * Retrieves the list of groups a product is shared with.
+ * * This function allows the product owner to see exactly which groups have access 
+ * to a specific product. It checks for product ownership, fetches the visibility records, 
+ * and then retrieves the names of the associated groups.
+ */
 const viewGroupsForProduct = async (req, res, next) => {
     try {
         const productId = Number(req.params.id)
@@ -91,8 +106,14 @@ const viewGroupsForProduct = async (req, res, next) => {
 
 }
 
+// DELETE /products/:id/visibility/:groupId
+/*
+ * Removes a product's visibility from a specific group.
+ * * This function revokes access to a product for a specific group. 
+ * It ensures the request comes from the product owner and that the product 
+ * was indeed shared with that group before attempting to delete the visibility record.
+ */
 const deleteProductfromGroup = async (req, res, next) => {
-    //trebuie sters randul din productvisibiliy care are combinatia product group id
 
     try {
         const productId = Number(req.params.id)
