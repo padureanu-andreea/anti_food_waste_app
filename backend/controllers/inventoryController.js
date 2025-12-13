@@ -1,11 +1,10 @@
 const { Product } = require('../models');
 
-const createProduct = async (req, res) => {
+const createProduct = async (req, res, next) => {
     try {
         const ownerId = req.user.id;
         let { name, category, quantity, expiryDate, notes } = req.body;
 
-        // validări minime
         if (!name || !name.trim()) {
             return res.status(400).json({ message: "name is required" });
         }
@@ -37,11 +36,11 @@ const createProduct = async (req, res) => {
     }
 };
 
-const getAllProducts = async (req, res) => {
+const getAllProducts = async (req, res, next) => {
     try {
         const { category, status, sort, order } = req.query;
 
-        const whereClause = {};
+        const whereClause = {ownerId: req.user.id};
         if (category) {
             whereClause.category = category;
         }
@@ -66,14 +65,19 @@ const getAllProducts = async (req, res) => {
 
         res.status(200).json(products);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
-const getProductById = async (req, res) => {
+const getProductById = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const product = await Product.findByPk(id);
+        const product = await Product.findOne({
+            where: {
+                id: id,
+                ownerId: req.user.id
+            }
+        });
 
         if (!product) {
             return res.status(404).json({ message: 'Product not found' });
@@ -81,14 +85,19 @@ const getProductById = async (req, res) => {
 
         res.status(200).json(product);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
-const updateProduct = async (req, res) => {
+const updateProduct = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const product = await Product.findByPk(id);
+        const product = await Product.findOne({
+            where: {
+                id: id,
+                ownerId: req.user.id
+            }
+        });
 
         if (!product) {
             return res.status(404).json({ message: 'Product not found' });
@@ -97,14 +106,19 @@ const updateProduct = async (req, res) => {
         await product.update(req.body);
         res.status(200).json(product);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
-const deleteProduct = async (req, res) => {
+const deleteProduct = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const product = await Product.findByPk(id);
+        const product = await Product.findOne({
+            where: {
+                id: id,
+                ownerId: req.user.id
+            }
+        });
 
         if (!product) {
             return res.status(404).json({ message: 'Product not found' });
@@ -113,7 +127,7 @@ const deleteProduct = async (req, res) => {
         await product.destroy();
         res.status(204).send();
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 

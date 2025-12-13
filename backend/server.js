@@ -9,6 +9,7 @@ const productRouter = require("./routes/productRouter")
 const feedRouter = require("./routes/feedRouter")
 const groupRouter = require("./routes/groupRouter")
 const debugGroupRouter = require("./routes/debugGroupRouter")
+const tagRoutes = require("./routes/tagRoutes");
 
 const app = express();
 const port = 3000;
@@ -25,6 +26,7 @@ app.use("/debug",debugGroupRouter)
 app.use('/inventory', inventoryRoutes);
 app.use('/claims', claimRoutes);
 app.use('/integrations', integrationRoutes);
+app.use("/tags", tagRoutes);
 
 // Ruta de test și sync DB 
 app.get("/", async (req, res, next) => {

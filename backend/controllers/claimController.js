@@ -1,16 +1,16 @@
 const { Claim, Product, User } = require('../models');
 
-const createClaim = async (req, res) => {
+const createClaim = async (req, res, next) => {
     try {
         const { id } = req.params; 
         const claimerId = req.user.id; 
 
         const product = await Product.findByPk(id);
         if (!product) {
-            return res.status(404).json({ message: 'Produsul nu a fost găsit.' });
+            return res.status(404).json({ message: 'Product not found.' });
         }
         if (product.status !== 'available') {
-            return res.status(400).json({ message: 'Acest produs nu mai este disponibil.' });
+            return res.status(400).json({ message: 'This product is no longer available.' });
         }
 
         const claim = await Claim.create({
@@ -21,17 +21,14 @@ const createClaim = async (req, res) => {
 
         res.status(201).json(claim);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
-const getClaims = async (req, res) => {
+const getClaims = async (req, res, next) => {
     try {
-        const { as, userId } = req.query; 
-
-        if (!userId) {
-            return res.status(400).json({ message: 'Parametrul userId este obligatoriu pentru filtrare.' });
-        }
+        const { as } = req.query; 
+        const userId = req.user.id; 
 
         let claims;
 
@@ -48,49 +45,70 @@ const getClaims = async (req, res) => {
                         where: { ownerId: userId } 
                     },
                     {
-                        model: User 
+                        model: User,
+                        attributes: ['id', 'username', 'email', 'phone'] 
                     }
                 ]
             });
         } else {
-            return res.status(400).json({ message: 'Parametrul "as" trebuie să fie "claimer" sau "owner".' });
+            return res.status(400).json({ message: 'Parameter "as" has to be "claimer" or "owner".' });
         }
 
         res.status(200).json(claims);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
-const getClaimsForProduct = async (req, res) => {
+const getClaimsForProduct = async (req, res, next) => {
     try {
-        const { id } = req.params;
+        const { id } = req.params; 
+        const userId = req.user.id; 
+
+        const product = await Product.findByPk(id);
+
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found.' });
+        }
+
+        if (product.ownerId !== userId) {
+            return res.status(403).json({ message: 'Access denied. Only the owner can see the claims.' });
+        }
+
         const claims = await Claim.findAll({
             where: { productId: id },
-            include: [{ model: User }] 
+            include: [{ 
+                model: User,
+                attributes: ['id', 'username', 'email', 'phone', 'bio'] 
+            }] 
         });
+
         res.status(200).json(claims);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
-const updateClaimStatus = async (req, res) => {
+const updateClaimStatus = async (req, res, next) => {
     try {
         const { id } = req.params; 
         const { status } = req.body; // 'approved' sau 'rejected'
 
         const claim = await Claim.findByPk(id, { include: Product });
         if (!claim) {
-            return res.status(404).json({ message: 'Revendicarea nu există.' });
+            return res.status(404).json({ message: 'The claim does not exist.' });
+        }
+
+        if (claim.Product.ownerId !== req.user.id) {
+            return res.status(403).json({ message: 'You do not have the right to approve claims for this product.' });
         }
 
         if (status === 'approved') {
-            // Dacă acceptăm cererea, trebuie să marcam produsul ca "claimed"
+            // Daca accept cererea, trebuie sa marchez produsul ca "claimed"
             const product = await Product.findByPk(claim.productId);
             
             if (product.status !== 'available') {
-                return res.status(400).json({ message: 'Produsul nu mai este disponibil.' });
+                return res.status(400).json({ message: 'Product no longer available.' });
             }
 
             product.status = 'claimed';
@@ -102,7 +120,7 @@ const updateClaimStatus = async (req, res) => {
 
         res.status(200).json(claim);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 

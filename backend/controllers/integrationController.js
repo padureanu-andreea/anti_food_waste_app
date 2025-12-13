@@ -1,13 +1,18 @@
 const { Product } = require('../models');
 
-const generateFacebookShare = async (req, res) => {
+const generateFacebookShare = async (req, res, next) => {
     try {
         const { productId } = req.params;
 
         const product = await Product.findByPk(productId);
         
         if (!product) {
-            return res.status(404).json({ message: "Produsul nu există" });
+            return res.status(404).json({ message: "Product does not exist." });
+        }
+
+        // Verific dac produsul mai e disponibil
+        if (product.status !== 'available') {
+            return res.status(400).json({ message: "Only available products can be shared." });
         }
 
         const appLink = "http://localhost:3000"; 
@@ -22,20 +27,25 @@ const generateFacebookShare = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error); 
     }
 };
 
-const generateInstagramContent = async (req, res) => {
+const generateInstagramContent = async (req, res, next) => {
     try {
         const { productId } = req.params;
         const product = await Product.findByPk(productId);
 
         if (!product) {
-            return res.status(404).json({ message: "Produsul nu există" });
+            return res.status(404).json({ message: "Product does not exist." });
         }
 
-        const message = `Donez ${product.name}! 🍎 Expiră la: ${product.expiryDate}. Contactează-mă pe AntiFoodWaste App! ♻️ #StopFoodWaste`;
+        // Verific statusul
+        if (product.status !== 'available') {
+            return res.status(400).json({ message: "Only available products can be shared." });
+        }
+
+        const message = `Donez ${product.name}! Expiră la: ${product.expiryDate}. Contactează-mă pe AntiFoodWaste App!  #StopFoodWaste`;
 
         res.status(200).json({
             platform: 'instagram',
@@ -45,7 +55,7 @@ const generateInstagramContent = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
