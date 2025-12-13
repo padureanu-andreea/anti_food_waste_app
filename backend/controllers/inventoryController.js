@@ -1,5 +1,12 @@
 const { Product } = require('../models');
 
+// POST /inventory/
+/*
+ * Creates a new product in the inventory.
+ * * This function allows an authenticated user to add a new item to their inventory.
+ * It performs validation on required fields (name, category, quantity, expiry date)
+ * and links the product to the current user (ownerId) derived from the auth token.
+ */
 const createProduct = async (req, res) => {
     try {
         const ownerId = req.user.id;
@@ -37,6 +44,13 @@ const createProduct = async (req, res) => {
     }
 };
 
+// GET /inventory/
+/*
+ * Retrieves a list of all products.
+ * * This function fetches the inventory with support for filtering and sorting.
+ * Users can filter by 'category' or 'status' and sort the results by expiration date,
+ * creation date, or name. The default sort order highlights items expiring soonest.
+ */
 const getAllProducts = async (req, res) => {
     try {
         const { category, status, sort, order } = req.query;
@@ -70,6 +84,12 @@ const getAllProducts = async (req, res) => {
     }
 };
 
+// GET /inventory/:id
+/*
+ * Retrieves details for a specific product.
+ * * This function fetches a single product by its unique ID.
+ * It returns the product object if found, or a 404 error if the ID does not exist.
+ */
 const getProductById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -85,6 +105,13 @@ const getProductById = async (req, res) => {
     }
 };
 
+// PATCH /inventory/:id
+/*
+ * Updates an existing product.
+ * * This function modifies the details of a specific product identified by ID.
+ * It uses the data provided in the request body to update the corresponding fields
+ * in the database.
+ */
 const updateProduct = async (req, res) => {
     try {
         const { id } = req.params;
@@ -101,6 +128,12 @@ const updateProduct = async (req, res) => {
     }
 };
 
+// DELETE /inventory/:id
+/*
+ * Deletes a product from the inventory.
+ * * This function permanently removes a product record from the database
+ * based on the provided ID. It returns a 204 No Content status upon success.
+ */
 const deleteProduct = async (req, res) => {
     try {
         const { id } = req.params;

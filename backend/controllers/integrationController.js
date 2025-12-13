@@ -1,5 +1,11 @@
 const { Product } = require('../models');
 
+// GET /integrations/share/facebook/:productId
+/*
+ * Generates a Facebook share link for a specific product.
+ * * This function fetches the product details and constructs a specialized URL for the 
+ * Facebook Sharer.
+ */
 const generateFacebookShare = async (req, res) => {
     try {
         const { productId } = req.params;
@@ -26,6 +32,14 @@ const generateFacebookShare = async (req, res) => {
     }
 };
 
+// GET //integrations/instagram/:productId
+/*
+ * Generates formatted content for an Instagram post.
+ * * This function prepares a text caption  for a specific product. 
+ * Since Instagram does not support direct posting via web links in the same way Facebook does, 
+ * this endpoint returns the text for the user to copy and paste manually into their Instagram app 
+ * along with instructions.
+ */
 const generateInstagramContent = async (req, res) => {
     try {
         const { productId } = req.params;
@@ -35,7 +49,7 @@ const generateInstagramContent = async (req, res) => {
             return res.status(404).json({ message: "Produsul nu există" });
         }
 
-        const message = `Donez ${product.name}! 🍎 Expiră la: ${product.expiryDate}. Contactează-mă pe AntiFoodWaste App! ♻️ #StopFoodWaste`;
+        const message = `Donez ${product.name}! Expiră la: ${product.expiryDate}. Contactează-mă pe AntiFoodWaste App! #StopFoodWaste`;
 
         res.status(200).json({
             platform: 'instagram',

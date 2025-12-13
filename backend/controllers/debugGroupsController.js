@@ -2,6 +2,7 @@ const { Op } = require("sequelize")
 
 const Group = require("../models/group")
 
+// GET /debug/groups
 const getAllGroups = async (req, res, next) => {
   try {
     const groups = await Group.findAll()
@@ -11,12 +12,13 @@ const getAllGroups = async (req, res, next) => {
   }
 }
 
+//POST /debug/groups
 const postGroup = async (req, res, next) => {
   try {
     const { name, ownerId } = req.body
 
     if (!name || !ownerId) {
-      return res.status(400).json({ message: "name and ownerId are required" })
+      return res.status(400).json({ message: "Name and ownerId are required" })
     }
 
     const group = await Group.create({ name: name.trim(), ownerId })
@@ -26,6 +28,7 @@ const postGroup = async (req, res, next) => {
   }
 }
 
+// PATCH /debug/groups/:id 
 const changeGroupName = async (req, res, next) => {
   try {
     const groupId = Number(req.params.id)
@@ -49,13 +52,14 @@ const changeGroupName = async (req, res, next) => {
   }
 }
 
+//PATCH /debug/groups/:id/owner
 const changeGroupOwner = async (req, res, next) => {
   try {
     const groupId = Number(req.params.id)
     const { ownerId } = req.body
 
     if (!ownerId) {
-      return res.status(400).json({ message: "ownerId is required" })
+      return res.status(400).json({ message: "OwnerId is required" })
     }
 
     const group = await Group.findByPk(groupId)
@@ -85,7 +89,7 @@ const changeGroupOwner = async (req, res, next) => {
   }
 }
 
-
+// DELETE /debug/groups/:id
 const deleteGroup = async (req, res, next) => {
   try {
     const groupId = Number(req.params.id)
