@@ -295,7 +295,7 @@ const getMembersFromGroup = async (req, res, next) => {
                 return res.status(403).json({ message: "Access denied" })
         }
 
-        // Caut membrii
+        //search for members
         const members = await GroupMember.findAll({
             where: { groupId: groupId },
             include: [
