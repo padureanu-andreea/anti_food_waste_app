@@ -86,7 +86,7 @@ Ruleaza comanda:
 node server.js
 ```
 
-Serverul va porni pe http://localhost:3000.
+Serverul va porni pe http://localhost:5000.
 
 ### 5. Testare API (Postman)
 In repository este inclus fisierul anti-food-waste-app.postman_collection.json
