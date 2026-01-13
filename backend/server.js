@@ -18,10 +18,19 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 app.use(cors({
-  origin: 'https://anti-food-waste-app-nu.vercel.app',
+  origin: function (origin, callback) {
+    // Permite cererile fără origine (ca cele de Postman) 
+    // sau cele care vin de pe orice domeniu vercel.app
+    if (!origin || origin.indexOf('vercel.app') !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
+
 app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
