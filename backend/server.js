@@ -17,7 +17,11 @@ const tagRoutes = require("./routes/tagRoutes");
 const app = express();
 const port = process.env.PORT || 5000;
 
-app.use(cors()); 
+app.use(cors({
+  origin: 'https://anti-food-waste-app-nu.vercel.app',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
 app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
