@@ -4,6 +4,19 @@ import API from '../api';
 
 const CATEGORIES = ["Lactate", "Fructe", "Legume", "Carne", "Conserve", "Mancare gatita", "Diverse"];
 
+// Helper pentru calcularea expirării în timp real (Pct 6)
+const checkIsExpiring = (dateStr) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const expiryDate = new Date(dateStr);
+    const inTwoDays = new Date();
+    inTwoDays.setDate(today.getDate() + 2);
+    inTwoDays.setHours(23, 59, 59, 999);
+
+    return expiryDate <= inTwoDays && expiryDate >= today;
+};
+
 const Inventory = () => {
     const [items, setItems] = useState([]);
     const [myGroups, setMyGroups] = useState([]);
@@ -15,7 +28,6 @@ const Inventory = () => {
     const [deleteModal, setDeleteModal] = useState({ show: false, itemId: null });
     
     const location = useLocation();
-    const highlightIds = location.state?.highlightIds || [];
 
     const loadData = async () => {
         try {
@@ -43,11 +55,11 @@ const Inventory = () => {
 
     const confirmDelete = async (status) => {
         try {
-            // Soft Delete: actualizăm statusul fără a șterge rândul
+            // Soft Delete conform cerințelor de statistici
             await API.patch(`/inventory/${deleteModal.itemId}`, { status });
             setDeleteModal({ show: false, itemId: null });
             loadData(); 
-            window.customAlert(status === 'consumed' ? "Să îți fie de bine! 🌿" : "Produs marcat ca irosit.");
+            window.customAlert(status === 'consumed' ? "Să îți fie de bine!" : "Produs marcat ca irosit.");
         } catch (err) {
             window.customAlert("Eroare la procesarea cererii.");
         }
@@ -65,34 +77,24 @@ const Inventory = () => {
     const shareOnSocial = async (id, platform) => {
         try {
             const { data } = await API.get(`/integrations/share/${platform}/${id}`);
-            
             if (data && data.shareUrl) {
-                // FIX Instagram: Copiem textul automat în clipboard
                 if (platform === 'instagram' && data.generatedMessage) {
                     await navigator.clipboard.writeText(data.generatedMessage);
-                    window.customAlert("Mesajul a fost copiat! Te redirecționăm la Instagram pentru a-l lipi în postare.");
+                    window.customAlert("Mesajul a fost copiat! Lipsește-l în postarea de Instagram.");
                 }
-                
-                // Redirecționare către platformă (Fix tab-ul aplicației proprii)
                 window.open(data.shareUrl, "_blank");
-            } else {
-                window.customAlert("Eroare: Link-ul de share nu a putut fi generat.");
             }
-        } catch (err) {
-            window.customAlert("Eroare la comunicarea cu serverul.");
-        }
+        } catch (err) { window.customAlert("Eroare la generarea link-ului."); }
     };
 
     const handleUpdateSubmit = async (e) => {
         e.preventDefault();
         try {
             await API.patch(`/inventory/${editItem.id}`, editItem);
-            window.customAlert("Produs actualizat cu succes!");
+            window.customAlert("Produs actualizat!");
             setEditItem(null); 
             loadData(); 
-        } catch (err) {
-            window.customAlert("Eroare la actualizarea produsului.");
-        }
+        } catch (err) { window.customAlert("Eroare la actualizare."); }
     };
 
     const sortedItems = [...items].sort((a, b) => {
@@ -124,7 +126,7 @@ const Inventory = () => {
                         </select>
                         <label>Cantitate:</label>
                         <input placeholder="ex: 200g, 1 buc" required onChange={e => setNewItem({...newItem, quantity: e.target.value})} />
-                        <button type="submit" style={{ width: '100%' }}>Salvează în Inventar</button>
+                        <button type="submit" style={{ width: '100%' }}>Salvează</button>
                     </form>
                 </div>
             )}
@@ -144,100 +146,83 @@ const Inventory = () => {
                     <div key={cat} className="category-section">
                         <h3>{cat}</h3>
                         <div className="grid">
-                            {catItems.map(item => (
-                                <div key={item.id} className="card" style={{ 
-                                    position: 'relative',
-                                    border: highlightIds.includes(item.id) ? '2px solid var(--danger)' : '1px solid #e0e0e0',
-                                    backgroundColor: highlightIds.includes(item.id) ? '#fff5f5' : 'white'
-                                }}>
-                                    {/* Buton Editare Pencil */}
-                                    <button 
-                                        onClick={() => setEditItem(item)} 
-                                        style={{ 
-                                            position: 'absolute', top: '10px', right: '10px', 
-                                            padding: '5px', background: 'none', color: 'var(--primary-green)',
-                                            fontSize: '1.2rem', minWidth: 'auto', border: 'none', cursor: 'pointer'
-                                        }}
-                                        title="Editează produs"
-                                    >
-                                        ✏️
-                                    </button>
+                            {catItems.map(item => {
+                                // Pct 6: Calculăm vizualizarea critică în timp real
+                                const isCritical = checkIsExpiring(item.expiryDate) && item.status === 'available';
 
-                                    <h4>{item.name} {highlightIds.includes(item.id) && <span style={{color: 'red', fontSize: '0.8rem'}}> (Expiră curând!)</span>}</h4>
-                                    <p><strong>Cantitate:</strong> {item.quantity}</p>
-                                    <p><strong>Expiră la:</strong> {new Date(item.expiryDate).toLocaleDateString()}</p>
-                                    <p><strong>Status:</strong> <span style={{color: item.status === 'available' ? 'green' : 'gray'}}>{item.status}</span></p>
-                                    
-                                    {item.status === 'available' && (
-                                        <div style={{ marginTop: '10px', borderTop: '1px solid #eee', paddingTop: '10px' }}>
-                                            <p style={{ fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '8px' }}>Partajează cu grupul:</p>
-                                            
-                                            <div style={{ maxHeight: '100px', overflowY: 'auto', marginBottom: '10px' }}>
-                                                {myGroups.map(g => (
-                                                    <label key={g.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
-                                                        <input 
-                                                            type="checkbox" 
-                                                            style={{ width: 'auto' }}
-                                                            checked={selectedGroups.includes(g.id.toString())}
-                                                            onChange={(e) => {
-                                                                const id = g.id.toString();
-                                                                if (e.target.checked) setSelectedGroups([...selectedGroups, id]);
-                                                                else setSelectedGroups(selectedGroups.filter(x => x !== id));
-                                                            }}
-                                                        /> {g.name}
-                                                    </label>
-                                                ))}
-                                            </div>
-                                            <button onClick={() => handleShare(item.id)} style={{ fontSize: '0.8rem', width: '100%', marginBottom: '10px' }}>Trimite la Prieteni</button>
-                                            
-                                            {/* --- SECȚIUNE SOCIAL SHARE CU LOGOURI --- */}
-                                            {item.ProductVisibilities?.length > 0 && (
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '10px', marginBottom: '10px' }}>
-                                                    <span style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Share:</span>
-                                                    
-                                                    {/* Facebook Logo Button */}
-                                                    <button 
-                                                        onClick={() => shareOnSocial(item.id, 'facebook')} 
-                                                        style={{ background: 'none', border: 'none', color: '#1877F2', fontSize: '1.8rem', cursor: 'pointer', padding: '0', minWidth: 'auto' }}
-                                                        title="Share pe Facebook"
-                                                    >
-                                                        <i className="fab fa-facebook"></i>
-                                                    </button>
+                                return (
+                                    <div key={item.id} className="card" style={{ 
+                                        position: 'relative',
+                                        border: isCritical ? '2px solid var(--danger)' : '1px solid #e0e0e0',
+                                        backgroundColor: isCritical ? '#fff5f5' : 'white'
+                                    }}>
+                                        <button 
+                                            onClick={() => setEditItem(item)} 
+                                            style={{ 
+                                                position: 'absolute', top: '10px', right: '10px', 
+                                                background: 'none', color: 'var(--primary-green)',
+                                                fontSize: '1.2rem', minWidth: 'auto', border: 'none', cursor: 'pointer',
+                                                border: '1px solid var(--primary-green)'
+                                            }}
+                                            title="Editează produs"
+                                        >Edit</button>
 
-                                                    {/* Instagram Logo Button */}
-                                                    <button 
-                                                        onClick={() => shareOnSocial(item.id, 'instagram')} 
-                                                        style={{ background: 'none', border: 'none', color: '#E4405F', fontSize: '1.8rem', cursor: 'pointer', padding: '0', minWidth: 'auto' }}
-                                                        title="Share pe Instagram"
-                                                    >
-                                                        <i className="fab fa-instagram"></i>
-                                                    </button>
+                                        <h4>{item.name} {isCritical && <span style={{color: 'red', fontSize: '0.8rem'}}> (!Expiră curând)</span>}</h4>
+                                        <p><strong>Cantitate:</strong> {item.quantity}</p>
+                                        <p><strong>Expiră:</strong> {new Date(item.expiryDate).toLocaleDateString()}</p>
+                                        <p><strong>Status:</strong> <span style={{color: item.status === 'available' ? 'green' : 'gray'}}>{item.status}</span></p>
+                                        
+                                        {item.status === 'available' && (
+                                            <div style={{ marginTop: '10px', borderTop: '1px solid #eee', paddingTop: '10px' }}>
+                                                <p style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>Partajează cu grupul:</p>
+                                                <div style={{ maxHeight: '100px', overflowY: 'auto', marginBottom: '10px' }}>
+                                                    {myGroups.map(g => (
+                                                        <label key={g.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
+                                                            <input type="checkbox" style={{ width: 'auto' }}
+                                                                onChange={(e) => {
+                                                                    const id = g.id.toString();
+                                                                    if (e.target.checked) setSelectedGroups([...selectedGroups, id]);
+                                                                    else setSelectedGroups(selectedGroups.filter(x => x !== id));
+                                                                }}
+                                                            /> {g.name}
+                                                        </label>
+                                                    ))}
                                                 </div>
-                                            )}
-                                        </div>
-                                    )}
-                                    <button className="secondary" onClick={() => setDeleteModal({ show: true, itemId: item.id })} style={{ width: '100%', marginTop: '5px' }}>Șterge / Consumat</button>
-                                </div>
-                            ))}
+                                                <button onClick={() => handleShare(item.id)} style={{ fontSize: '0.8rem', width: '100%', marginBottom: '10px' }}>Trimite la Prieteni</button>
+                                                
+                                                {/* Pct 7: Share Social cu pictograme */}
+                                                {item.ProductVisibilities?.length > 0 && (
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '10px' }}>
+                                                        <span style={{ fontSize: '0.9rem' }}>Share:</span>
+                                                        <button onClick={() => shareOnSocial(item.id, 'facebook')} style={{ background: 'none', border: '1px solid var(--primary-green)', color: '#1877F2', fontSize: '1.5rem', cursor: 'pointer', minWidth: 'auto' }}>
+                                                            <i className="fab fa-facebook"></i>
+                                                        </button>
+                                                        <button onClick={() => shareOnSocial(item.id, 'instagram')} style={{ background: 'none', border: '1px solid var(--primary-green)', color: '#E4405F', fontSize: '1.5rem', cursor: 'pointer', minWidth: 'auto' }}>
+                                                            <i className="fab fa-instagram"></i>
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                        <button className="secondary" onClick={() => setDeleteModal({ show: true, itemId: item.id })} style={{ width: '100%', marginTop: '5px' }}>Șterge / Consumat</button>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 );
             })}
 
-            {/* Modal de Editare */}
+            {/* Modal Editare (Pct 12) */}
             {editItem && (
                 <div className="custom-modal-overlay">
                     <div className="custom-modal" style={{ maxWidth: '500px' }}>
-                        <h3 style={{ color: 'var(--primary-green)' }}>Editează Produs</h3>
+                        <h3>Editează Produs</h3>
                         <form onSubmit={handleUpdateSubmit}>
-                            <label>Nume produs:</label>
+                            <label>Nume:</label>
                             <input value={editItem.name} onChange={e => setEditItem({...editItem, name: e.target.value})} required />
-                            <label>Data expirării:</label>
+                            <label>Data:</label>
                             <input type="date" value={editItem.expiryDate} onChange={e => setEditItem({...editItem, expiryDate: e.target.value})} required />
-                            <label>Categorie:</label>
-                            <select value={editItem.category} onChange={e => setEditItem({...editItem, category: e.target.value})}>
-                                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                            </select>
                             <label>Cantitate:</label>
                             <input value={editItem.quantity} onChange={e => setEditItem({...editItem, quantity: e.target.value})} required />
                             <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
@@ -249,16 +234,15 @@ const Inventory = () => {
                 </div>
             )}
 
-            {/* Modal de Consum / Ștergere */}
+            {/* Modal Ștergere (Pct 4) */}
             {deleteModal.show && (
                 <div className="custom-modal-overlay">
                     <div className="custom-modal">
-                        <h3 style={{ color: 'var(--primary-green)' }}>Ce s-a întâmplat cu produsul?</h3>
-                        <p>Alege o opțiune pentru a actualiza statisticile tale eco.</p>
+                        <h3>Ce s-a întâmplat cu produsul?</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '20px' }}>
                             <button onClick={() => confirmDelete('consumed')}>✅ L-am CONSUMAT</button>
                             <button className="secondary" onClick={() => confirmDelete('trashed')}>🗑️ L-am ARUNCAT</button>
-                            <button style={{ background: 'none', color: 'gray', marginTop: '10px' }} onClick={() => setDeleteModal({ show: false })}>Anulează</button>
+                            <button style={{ background: 'none', color: 'gray' }} onClick={() => setDeleteModal({ show: false })}>Anulează</button>
                         </div>
                     </div>
                 </div>

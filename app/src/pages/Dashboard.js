@@ -51,7 +51,7 @@ const Dashboard = () => {
 
     return (
         <div className="container">
-            <h2 style={{ color: 'var(--primary-green)' }}>🛒 Produse Disponibile în Grupuri</h2>
+            <h2 style={{ color: 'var(--primary-green)' }}>Produse Disponibile în Grupuri</h2>
             <div className="grid">
                 {feed.length === 0 && <p>Niciun produs nou de la prieteni momentan.</p>}
                 {feed.map(item => (
@@ -88,7 +88,7 @@ const Dashboard = () => {
 
             <hr style={{ margin: '40px 0', border: '0.5px solid #ccc' }} />
 
-            <h2 style={{ color: 'var(--primary-green)' }}>📋 Revendicările Mele</h2>
+            <h2 style={{ color: 'var(--primary-green)' }}>Revendicările Mele</h2>
             <div className="grid">
                 {myClaims.length === 0 && <p>Nu ai revendicat niciun produs încă.</p>}
                 {myClaims.map(claim => (
@@ -97,7 +97,7 @@ const Dashboard = () => {
                         <p>Status cerere: <strong style={{ color: claim.status === 'approved' ? 'green' : 'orange' }}>{claim.status}</strong></p>
                         {claim.status === 'approved' && (
                             <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#e8f5e9', borderLeft: '4px solid green' }}>
-                                <p style={{ margin: 0 }}>✅ Aprobat! Contact donator: <strong>{claim.Product?.User?.phone || 'Nespecificat'}</strong></p>
+                                <p style={{ margin: 0 }}>Aprobat! Contact donator: <strong>{claim.Product?.User?.phone || 'Nespecificat'}</strong></p>
                             </div>
                         )}
                     </div>

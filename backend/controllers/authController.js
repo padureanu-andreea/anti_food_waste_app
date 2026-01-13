@@ -87,10 +87,12 @@ const searchUser = async (req, res, next) => {
                     { expiresIn: "7d" }
                 )
 
-                
+
                 return res.json({
                     username: username,
                     email: email,
+                    phone: existingUser.phone,
+                    bio: existingUser.bio,
                     message: "Login success",
                     token: token
                 })
@@ -195,14 +197,14 @@ const getMe = async (req, res, next) => {
  * strictly excluding sensitive data like password hashes.
  */
 const getAllUsers = async (req, res, next) => {
-  try {
-    const users = await User.findAll({
-      attributes: ["id", "username", "email", "phone", "bio"] //fara parola
-    });
-    return res.json(users);
-  } catch (error) {
-    next(error);
-  }
+    try {
+        const users = await User.findAll({
+            attributes: ["id", "username", "email", "phone", "bio"] //fara parola
+        });
+        return res.json(users);
+    } catch (error) {
+        next(error);
+    }
 };
 
 //GET /auth/users/:username
@@ -212,24 +214,24 @@ const getAllUsers = async (req, res, next) => {
  * If found, it returns their public profile information; otherwise, it returns a 404 error.
  */
 const getUserByUsername = async (req, res, next) => {
-  try {
-    const { username } = req.params;
+    try {
+        const { username } = req.params;
 
-    const user = await User.findOne({
-      where: { username },
-      attributes: ["id", "username", "email", "phone", "bio"]
-    });
+        const user = await User.findOne({
+            where: { username },
+            attributes: ["id", "username", "email", "phone", "bio"]
+        });
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        return res.json(user);
+    } catch (error) {
+        next(error);
     }
-
-    return res.json(user);
-  } catch (error) {
-    next(error);
-  }
 };
 
 
 
-module.exports = { createUser, searchUser, editUser, getMe , getAllUsers, getUserByUsername }
+module.exports = { createUser, searchUser, editUser, getMe, getAllUsers, getUserByUsername }
