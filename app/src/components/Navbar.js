@@ -7,11 +7,11 @@ const Navbar = () => {
     const navigate = useNavigate();
 
     const handleLogout = () => {
-        localStorage.removeItem('token');
-        sessionStorage.removeItem('alertShown');
-        setUser(null);
-        navigate('/login');
-    };
+    localStorage.removeItem('token');
+    sessionStorage.removeItem('alertShown'); 
+    setUser(null);
+    navigate('/'); 
+};
 
     // Punctul 3: Nu afișăm navbar-ul dacă nu este logat
     if (!user) return null;

@@ -10,10 +10,10 @@ const Register = () => {
         e.preventDefault();
         try {
             await API.post('/auth/register', formData);
-            alert("Cont creat cu succes!");
+            window.customAlert("Cont creat cu succes!");
             navigate('/login');
         } catch (err) {
-            alert(err.response?.data?.message || "Eroare la înregistrare");
+            window.customAlert(err.response?.data?.message || "Eroare la înregistrare");
         }
     };
 

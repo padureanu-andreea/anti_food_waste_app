@@ -21,10 +21,10 @@ const Profile = () => {
       
       // Actualizăm starea globală a utilizatorului cu noile date primite de la backend
       setUser(data.user);
-      alert("Profilul tău AntiFoodWaste a fost actualizat cu succes!");
+      window.customAlert("Profilul tău AntiFoodWaste a fost actualizat cu succes!");
     } catch (err) {
       // Afișăm erorile primite (ex: username deja existent)
-      alert(err.response?.data?.message || "Eroare la actualizarea profilului.");
+      window.customAlert(err.response?.data?.message || "Eroare la actualizarea profilului.");
     }
   };
 

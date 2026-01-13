@@ -5,9 +5,12 @@ const Groups = () => {
     const [groups, setGroups] = useState([]);
     const [searchUser, setSearchUser] = useState('');
     const [newGroupName, setNewGroupName] = useState('');
+    const [taggingData, setTaggingData] = useState(null); // Reține {groupId, memberId} pentru modal
+    const [tempTagName, setTempTagName] = useState("");   // Reține textul din modalul de etichetare
 
     const fetchGroups = async () => {
         try {
+            // Preluăm grupurile împreună cu membrii și etichetele lor (formatate de backend)
             const { data } = await API.get('/groups');
             setGroups(data);
         } catch (err) {
@@ -19,55 +22,60 @@ const Groups = () => {
 
     const createGroup = async (e) => {
         e.preventDefault();
-        await API.post('/groups', { name: newGroupName });
-        setNewGroupName('');
-        fetchGroups();
+        try {
+            await API.post('/groups', { name: newGroupName });
+            setNewGroupName('');
+            window.customAlert("Grup creat cu succes!");
+            fetchGroups();
+        } catch (err) {
+            window.customAlert("Eroare la crearea grupului.");
+        }
     };
 
     const addMember = async (groupId) => {
         try {
+            // 1. Căutăm user-ul pentru a-i afla ID-ul (Backend-ul caută după username)
             const userRes = await API.get(`/auth/users/${searchUser}`);
             const userId = userRes.data.id;
+
+            // 2. Îl adăugăm în grup folosind ID-ul găsit
             await API.post(`/groups/${groupId}/members`, { userId: userId });
-            alert("Membru adăugat!");
+            window.customAlert("Membru adăugat!");
             setSearchUser('');
             fetchGroups();
         } catch (err) { 
-            alert("Utilizatorul nu a fost găsit sau este deja în grup."); 
+            window.customAlert("Utilizatorul nu a fost găsit sau este deja în grup."); 
         }
     };
 
-    const addTag = async (groupId, memberId) => {
-        const tagName = window.prompt("Introdu eticheta (ex: Vegetarian, Vegan, Carnivor):");
-        if (!tagName) return;
+    // Deschide modalul nostru personalizat (fără localhost says)
+    const openTagModal = (groupId, memberId) => {
+        setTaggingData({ groupId, memberId });
+        setTempTagName(""); 
+    };
+
+    const handleSaveTag = async (e) => {
+        e.preventDefault();
+        if (!tempTagName) return;
 
         try {
-            let tagId;
-            try {
-                // Pas 1: Încercăm să creăm tag-ul
-                const tagRes = await API.post('/tags', { name: tagName });
-                tagId = tagRes.data.id;
-            } catch (err) {
-                // Dacă tag-ul există deja (409), backend-ul tău îl trimite înapoi în obiectul 'tag'
-                if (err.response && err.response.status === 409) {
-                    tagId = err.response.data.tag.id;
-                } else { throw err; }
-            }
+            // Pas 1: Creăm sau obținem Tag-ul în DB
+            const tagRes = await API.post('/tags', { name: tempTagName });
+            const tagId = tagRes.data.id || tagRes.data.tag?.id;
 
-            // Pas 2: Legăm tag-ul de membrul grupului
-            if (tagId) {
-                await API.post(`/groups/${groupId}/members/${memberId}/tags`, { tagId });
-                alert("Etichetă adăugată!");
-                fetchGroups();
-            }
+            // Pas 2: Asociem Tag-ul membrului în acest grup
+            await API.post(`/groups/${taggingData.groupId}/members/${taggingData.memberId}/tags`, { tagId });
+            
+            window.customAlert("Etichetă adăugată cu succes!");
+            setTaggingData(null); 
+            fetchGroups(); 
         } catch (err) {
-            alert("Eroare la adăugarea etichetei.");
+            window.customAlert("Eroare la adăugarea etichetei.");
         }
     };
 
     return (
         <div className="container">
-            {/* Punctul 1: Titlu fără "Eco" */}
             <h2 style={{ color: 'var(--primary-green)' }}>Management Grupuri</h2>
             
             <div className="card">
@@ -85,7 +93,9 @@ const Groups = () => {
 
             {groups.map(section => (
                 <div key={section.status} style={{ marginTop: '30px' }}>
-                    <h3 style={{ textTransform: 'capitalize' }}>Grupuri în care ești {section.status === 'owner' ? 'Proprietar' : 'Membru'}</h3>
+                    <h3 style={{ textTransform: 'capitalize' }}>
+                        Grupuri în care ești {section.status === 'owner' ? 'Proprietar' : 'Membru'}
+                    </h3>
                     <div className="grid">
                         {section.groups.map(g => (
                             <div key={g.id} className="group-card">
@@ -93,7 +103,7 @@ const Groups = () => {
                                 <div style={{ margin: '10px 0' }}>
                                     <strong>Membri:</strong>
                                     
-                                    {/* Punctul 5: Snippet-ul cerut pentru afișarea membrilor și etichetelor */}
+                                    {/* Afișarea membrilor și a etichetelor lor alimentare (Pct 5) */}
                                     {g.members && g.members.length > 0 ? (
                                         g.members.map(m => (
                                             <div key={m.id} className="member-item" style={{ fontSize: '0.9rem', marginTop: '8px', padding: '5px', borderBottom: '1px solid #f0f0f0' }}>
@@ -103,7 +113,7 @@ const Groups = () => {
                                                 ))}
                                                 {section.status === 'owner' && (
                                                     <button 
-                                                        onClick={() => addTag(g.id, m.id)} 
+                                                        onClick={() => openTagModal(g.id, m.id)} 
                                                         style={{ padding: '2px 6px', fontSize: '0.7rem', marginLeft: '10px' }}
                                                     >
                                                         + Etichetă
@@ -120,10 +130,13 @@ const Groups = () => {
                                     <div style={{ borderTop: '1px solid #eee', paddingTop: '10px', marginTop: '10px' }}>
                                         <input 
                                             placeholder="Caută username" 
+                                            value={searchUser}
                                             onChange={e => setSearchUser(e.target.value)} 
                                             style={{ padding: '8px' }} 
                                         />
-                                        <button onClick={() => addMember(g.id)} style={{ width: '100%', marginTop: '5px' }}>Adaugă Membru</button>
+                                        <button onClick={() => addMember(g.id)} style={{ width: '100%', marginTop: '5px' }}>
+                                            Adaugă Membru
+                                        </button>
                                     </div>
                                 )}
                             </div>
@@ -131,6 +144,37 @@ const Groups = () => {
                     </div>
                 </div>
             ))}
+
+            {/* Modal Personalizat pentru Etichetare (fără localhost says) */}
+            {taggingData && (
+                <div className="custom-modal-overlay">
+                    <div className="custom-modal">
+                        <h3 style={{ color: 'var(--primary-green)' }}>Adaugă Etichetă</h3>
+                        <p>Introdu preferința alimentară (ex: Vegan, Carnivor):</p>
+                        
+                        <form onSubmit={handleSaveTag}>
+                            <input 
+                                autoFocus
+                                value={tempTagName} 
+                                onChange={e => setTempTagName(e.target.value)} 
+                                placeholder="Nume etichetă..."
+                                required 
+                            />
+                            <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                                <button type="submit" style={{ flex: 1 }}>Salvează</button>
+                                <button 
+                                    type="button" 
+                                    className="secondary" 
+                                    style={{ flex: 1 }} 
+                                    onClick={() => setTaggingData(null)}
+                                >
+                                    Anulează
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
