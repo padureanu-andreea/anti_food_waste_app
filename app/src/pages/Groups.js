@@ -3,44 +3,56 @@ import API from '../api';
 
 const Groups = () => {
     const [groups, setGroups] = useState([]);
-    const [newGroupName, setNewGroupName] = useState('');
-    const [inviteData, setInviteData] = useState({ groupId: '', userId: '' });
+    const [searchUser, setSearchUser] = useState('');
 
     const fetchGroups = async () => {
-        const { data } = await API.get('/groups'); //
+        const { data } = await API.get('/groups');
         setGroups(data);
     };
 
     useEffect(() => { fetchGroups(); }, []);
 
-    const createGroup = async (e) => {
-        e.preventDefault();
-        await API.post('/groups', { name: newGroupName });
-        setNewGroupName('');
-        fetchGroups();
+    const addMember = async (groupId) => {
+        try {
+            // Backend-ul tău are nevoie de ID-ul userului, deci aici ar trebui un search real. 
+            // Pentru simplitate, folosim username-ul dacă backend-ul îl suportă.
+            await API.post(`/groups/${groupId}/members`, { username: searchUser });
+            alert("Membru invitat!");
+            fetchGroups();
+        } catch (err) { alert("Utilizatorul nu a fost găsit."); }
+    };
+
+    const addTag = async (groupId, userId) => {
+        const tagName = window.prompt("Introdu eticheta (ex: Vegetarian, Fără Gluten, Iubitor de zacusca):");
+        if (tagName) {
+            await API.post(`/groups/${groupId}/members/${userId}/tags`, { name: tagName });
+            fetchGroups();
+        }
     };
 
     return (
         <div className="container">
-            <h2>Grupurile Mele</h2>
-            <form onSubmit={createGroup}>
-                <input placeholder="Nume Grup Nou" value={newGroupName} onChange={e => setNewGroupName(e.target.value)} />
-                <button type="submit">Creează Grup</button>
-            </form>
-
+            <h2>Management Grupuri Sociale</h2>
             {groups.map(section => (
                 <div key={section.status}>
-                    <h3>Grupuri ca {section.status}</h3>
+                    <h3>Grupuri în care ești {section.status === 'owner' ? 'Proprietar' : 'Membru'}</h3>
                     {section.groups.map(g => (
-                        <div key={g.id} style={{ border: '1px solid #ddd', padding: '10px', margin: '5px' }}>
-                            <strong>{g.name}</strong>
+                        <div key={g.id} className="group-card" style={{ background: '#f9f9f9', padding: '15px', marginBottom: '10px' }}>
+                            <h4>{g.name}</h4>
+                            <div className="members">
+                                <h5>Membri:</h5>
+                                {g.Members && g.Members.map(m => (
+                                    <div key={m.id}>
+                                        • {m.username} 
+                                        {m.GroupMemberTag && m.GroupMemberTag.map(t => <span className="tag">[{t.name}]</span>)}
+                                        {section.status === 'owner' && <button onClick={() => addTag(g.id, m.id)}>+</button>}
+                                    </div>
+                                ))}
+                            </div>
                             {section.status === 'owner' && (
-                                <div style={{ marginTop: '5px' }}>
-                                    <input placeholder="ID Utilizator de invitat" onChange={e => setInviteData({ groupId: g.id, userId: e.target.value })} />
-                                    <button onClick={async () => {
-                                        await API.post(`/groups/${g.id}/members`, { userId: inviteData.userId });
-                                        alert("Membru adăugat!");
-                                    }}>Invită</button>
+                                <div className="invite">
+                                    <input placeholder="Username prieten" onChange={e => setSearchUser(e.target.value)} />
+                                    <button onClick={() => addMember(g.id)}>Invită</button>
                                 </div>
                             )}
                         </div>
