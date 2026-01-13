@@ -46,12 +46,11 @@ const Dashboard = () => {
                     <div key={item.id} className="card">
                         <h3>{item.name}</h3>
                         <p><strong>Categorie:</strong> {item.category} | <strong>Cantitate:</strong> {item.quantity}</p>
-                        <p><strong>De la:</strong> {item.Owner?.username}</p>
+                        <p><strong>De la:</strong> {item.User?.username}</p>
                         <p><strong>Expiră la:</strong> {new Date(item.expiryDate).toLocaleDateString()}</p>
                         
                         <div style={{ display: 'flex', gap: '10px' }}>
                             <button onClick={() => claimItem(item.id)}>Revendică</button>
-                            <button className="secondary" onClick={() => shareOnSocial(item.id, 'facebook')}>Share FB</button>
                         </div>
                     </div>
                 ))}

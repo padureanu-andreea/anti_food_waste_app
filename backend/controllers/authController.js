@@ -72,10 +72,7 @@ const searchUser = async (req, res, next) => {
 
         const existingUser = await User.findOne({
             where: {
-                [Op.or]: [
-                    { username: username },
-                    { email: email }
-                ]
+                email: email
             }
         });
 
@@ -90,6 +87,7 @@ const searchUser = async (req, res, next) => {
                     { expiresIn: "7d" }
                 )
 
+                
                 return res.json({
                     username: username,
                     email: email,

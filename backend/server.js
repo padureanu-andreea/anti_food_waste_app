@@ -1,3 +1,5 @@
+
+const cors = require('cors');
 const express = require("express");
 const { sequelize } = require("./models");
 
@@ -14,6 +16,9 @@ const tagRoutes = require("./routes/tagRoutes");
 
 const app = express();
 const port = 3000;
+
+app.use(cors()); 
+app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -32,7 +37,7 @@ app.use("/tags", tagRoutes);
 // GET localhost:3000/ -> for testing the conection and also to create the data base
 app.get("/", async (req, res, next) => {
   try {
-    await sequelize.sync({ force: true });
+    await sequelize.sync({ alter: true });
     res.status(201).json({ message: "Database connected and synced." });
   } catch (err) {
     next(err);

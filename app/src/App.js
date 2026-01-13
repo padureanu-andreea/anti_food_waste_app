@@ -1,10 +1,9 @@
-import './App.css'
+import './App.css';
 import React, { useEffect, useContext } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom'; // Adăugat useNavigate aici
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import API from './api';
 
-// Importă paginile create anterior
 import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
 import Login from './Login';
@@ -13,77 +12,71 @@ import Inventory from './pages/Inventory';
 import Groups from './pages/Groups';
 import Claims from './pages/Claims';
 import Profile from './pages/Profile';
+import Landing from './pages/Landing'; // Importăm pagina creată mai sus
 
-// --- COMPONENTA DE ALERTE (SIMPLĂ) ---
 const AlertSystem = () => {
     const { user } = useContext(AuthContext);
+    const navigate = useNavigate();
 
     useEffect(() => {
-        const checkExpirations = async () => {
-            if (!user) return;
+        const check = async () => {
+            // Verificăm sessionStorage pentru a apărea o singură dată (Pct 6)
+            if (!user || sessionStorage.getItem('alertShown')) return;
 
             try {
-                // Preluăm produsele din inventarul utilizatorului
                 const { data } = await API.get('/inventory');
-                
                 const today = new Date();
                 const inTwoDays = new Date();
                 inTwoDays.setDate(today.getDate() + 2);
 
-                // Filtrăm produsele care expiră curând
-                const expiringSoon = data.filter(item => {
-                    const expiry = new Date(item.expiryDate);
-                    return expiry <= inTwoDays && item.status === 'available';
-                });
+                const expiring = data.filter(i => 
+                    new Date(i.expiryDate) <= inTwoDays && i.status === 'available'
+                );
 
-                if (expiringSoon.length > 0) {
-                    const names = expiringSoon.map(i => i.name).join(", ");
-                    // Afișăm alerta tip pop-up cerută
-                    window.alert(`Atenție! Următoarele produse expiră curând (în mai puțin de 2 zile): ${names}. Consumă-le sau partajează-le!`);
+                if (expiring.length > 0) {
+                    sessionStorage.setItem('alertShown', 'true');
+                    window.alert(`Ai produse care expiră! Te redirecționăm către Inventar.`);
+                    navigate('/inventory', { state: { highlightIds: expiring.map(i => i.id) } });
                 }
-            } catch (err) {
-                console.error("Eroare la verificarea alertelor", err);
-            }
+            } catch (err) { console.error(err); }
         };
+        check();
+    }, [user, navigate]);
 
-        checkExpirations();
-    }, [user]);
-
-    return null; // Această componentă nu randează nimic vizual, doar execută logica
+    return null;
 };
 
-// --- STRUCTURA PRINCIPALĂ ---
+function AppContent() {
+    const { user } = useContext(AuthContext);
+
+    return (
+        <>
+            <Navbar />
+            <AlertSystem />
+            <div className="container">
+                <Routes>
+                    {/* Dacă e logat vede Dashboard, altfel vede doar butoanele de Login/Register (Pct 3) */}
+                    <Route path="/" element={user ? <Dashboard /> : <Landing />} />
+                    
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    
+                    {/* Rute protejate - redirecționează la login dacă nu ești logat */}
+                    <Route path="/inventory" element={user ? <Inventory /> : <Navigate to="/login" />} />
+                    <Route path="/groups" element={user ? <Groups /> : <Navigate to="/login" />} />
+                    <Route path="/claims" element={user ? <Claims /> : <Navigate to="/login" />} />
+                    <Route path="/profile" element={user ? <Profile /> : <Navigate to="/login" />} />
+                </Routes>
+            </div>
+        </>
+    );
+}
+
 function App() {
     return (
         <AuthProvider>
             <Router>
-                <Navbar />
-                <AlertSystem /> {/* Sistemul de alerte rulează global dacă ești logat */}
-                <div style={{ padding: '20px' }}>
-                    <Routes>
-                        {/* Pagina principală (Feed-ul de produse de la prieteni) */}
-                        <Route path="/" element={<Dashboard />} />
-                        
-                        {/* Autentificare */}
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/register" element={<Register />} />
-                        
-                        {/* Managementul Inventarului (Frigiderul virtual) */}
-                        <Route path="/inventory" element={<Inventory />} />
-                        
-                        {/* Managementul Grupurilor și Cerc Social */}
-                        <Route path="/groups" element={<Groups />} />
-                        
-                        {/* Gestiunea cererilor de revendicare (Claim) */}
-                        <Route path="/claims" element={<Claims />} />
-                        
-                        {/* Editare Profil (Bio, Telefon) */}
-                        <Route path="/profile" element={<Profile />} />
-
-                        {/* Redirecționare în caz de rută necunoscută */}
-                        <Route path="*" element={<Navigate to="/" />} />
-                    </Routes>
-                </div>
+                <AppContent />
             </Router>
         </AuthProvider>
     );

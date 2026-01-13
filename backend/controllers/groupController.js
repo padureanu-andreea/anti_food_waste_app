@@ -16,44 +16,77 @@ const GroupMemberTag = require("../models/groupMemberTag");
  */
 const getAllMyGroups = async (req, res, next) => {
     try {
-        const myGroups = []
-        const myOwnerGroups = await Group.findAll({
-            where: { ownerId: req.user.id }
-        })
+        const myGroups = [];
 
-        if (myOwnerGroups.length > 0) {
-            myGroups.push({
-                status: "owner",
-                groups: myOwnerGroups
-            })
+        // 1. Definim un format comun de "include" pentru a lua membrii și etichetele lor din grupul respectiv
+        const includeMembersAndTags = {
+            model: User,
+            attributes: ['id', 'username'],
+            through: { attributes: [] }, // Ascundem datele din tabelul pivot GroupMember
+            include: [{
+                model: GroupMemberTag,
+                required: false,
+                include: [Tag] // Luăm numele etichetei (ex: "Vegetarian")
+            }]
+        };
 
-        }
+        // 2. Căutăm grupurile unde sunt PROPRIETAR
+        const ownerGroupsRaw = await Group.findAll({
+            where: { ownerId: req.user.id },
+            include: [includeMembersAndTags]
+        });
 
-        const myMemberGroups = await Group.findAll({
+        // 3. Căutăm grupurile unde sunt MEMBRU (dar nu proprietar)
+        const memberGroupsRaw = await Group.findAll({
             where: { ownerId: { [Op.ne]: req.user.id } },
             include: [
                 {
                     model: GroupMember,
                     where: { userId: req.user.id },
-                    required: true
-                }
+                    required: true,
+                    attributes: []
+                },
+                includeMembersAndTags
             ]
-        })
+        });
 
-        if (myMemberGroups.length > 0) {
+        // 4. Funcție utilitară pentru a formata datele exact cum le cere frontend-ul tău (m.username, t.tagName)
+        const formatGroup = (group) => ({
+            id: group.id,
+            name: group.name,
+            members: group.Users.map(u => ({
+                id: u.id,
+                username: u.username,
+                // Filtrăm etichetele pentru a le vedea doar pe cele din ACEST grup
+                tags: u.GroupMemberTags
+                    ?.filter(gmt => gmt.groupId === group.id)
+                    .map(gmt => ({
+                        tagId: gmt.Tag.id,
+                        tagName: gmt.Tag.name
+                    })) || []
+            }))
+        });
+
+        if (ownerGroupsRaw.length > 0) {
             myGroups.push({
-                status: "member",
-                groups: myMemberGroups
-            })
+                status: "owner",
+                groups: ownerGroupsRaw.map(formatGroup)
+            });
         }
 
-        return res.json(myGroups) //even if the array is empty because in the UI we will display a empty list  -> the user doesn't belog to any group
+        if (memberGroupsRaw.length > 0) {
+            myGroups.push({
+                status: "member",
+                groups: memberGroupsRaw.map(formatGroup)
+            });
+        }
 
+        return res.json(myGroups);
+
+    } catch (error) {
+        next(error);
     }
-    catch (error) {
-        next(error)
-    }
-}
+};
 
 // POST /groups/
 /*

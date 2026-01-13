@@ -9,8 +9,8 @@ const { Claim, Product, User } = require('../models');
  */
 const createClaim = async (req, res, next) => {
     try {
-        const { id } = req.params; 
-        const claimerId = req.user.id; 
+        const { id } = req.params;
+        const claimerId = req.user.id;
 
         const product = await Product.findByPk(id);
         if (!product) {
@@ -42,11 +42,11 @@ const createClaim = async (req, res, next) => {
 
 const getClaims = async (req, res, next) => {
     try {
-        const { as } = req.query; 
-        const userId = req.user.id; 
+        const { as } = req.query;
+        const userId = req.user.id;
 
         if (!userId) {
-            return res.status(400).json({ message: 'userID parameter is required for filtering.' }); 
+            return res.status(400).json({ message: 'userID parameter is required for filtering.' });
         }
 
         let claims;
@@ -54,18 +54,28 @@ const getClaims = async (req, res, next) => {
         if (as === 'claimer') {
             claims = await Claim.findAll({
                 where: { claimerId: userId },
-                include: [{ model: Product }] 
+                include: [
+                    {
+                        model: Product,
+                        include: [
+                            {
+                                model: User,
+                                attributes: ['phone']
+                            }
+                        ]
+                    }
+                ]
             });
         } else if (as === 'owner') {
             claims = await Claim.findAll({
                 include: [
-                    { 
-                        model: Product, 
-                        where: { ownerId: userId } 
+                    {
+                        model: Product,
+                        where: { ownerId: userId }
                     },
                     {
                         model: User,
-                        attributes: ['id', 'username', 'email', 'phone'] 
+                        attributes: ['id', 'username', 'email', 'phone']
                     }
                 ]
             });
@@ -88,8 +98,8 @@ const getClaims = async (req, res, next) => {
  */
 const getClaimsForProduct = async (req, res, next) => {
     try {
-        const { id } = req.params; 
-        const userId = req.user.id; 
+        const { id } = req.params;
+        const userId = req.user.id;
 
         const product = await Product.findByPk(id);
 
@@ -103,10 +113,10 @@ const getClaimsForProduct = async (req, res, next) => {
 
         const claims = await Claim.findAll({
             where: { productId: id },
-            include: [{ 
+            include: [{
                 model: User,
-                attributes: ['id', 'username', 'email', 'phone', 'bio'] 
-            }] 
+                attributes: ['id', 'username', 'email', 'phone', 'bio']
+            }]
         });
 
         res.status(200).json(claims);
@@ -126,37 +136,32 @@ const getClaimsForProduct = async (req, res, next) => {
  */
 const updateClaimStatus = async (req, res, next) => {
     try {
-        const { id } = req.params; 
-        const { status } = req.body; // 'approved' sau 'rejected'
+        const { id } = req.params;
+        const { status } = req.body;
 
         const claim = await Claim.findByPk(id, { include: Product });
-        if (!claim) {
-            return res.status(404).json({ message: 'The claim does not exist.' });
-        }
+        if (!claim) return res.status(404).json({ message: 'Cererea nu există.' });
 
-        if (claim.Product.ownerId !== req.user.id) {
-            return res.status(403).json({ message: 'You do not have the right to approve claims for this product.' });
-        }
+        if (claim.Product.ownerId !== req.user.id) return res.status(403).json({ message: 'Acces interzis.' });
 
         if (status === 'approved') {
-            // Daca accept cererea, trebuie sa marchez produsul ca "claimed"
             const product = await Product.findByPk(claim.productId);
-            
-            if (product.status !== 'available') {
-                return res.status(400).json({ message: 'Product no longer available.' });
-            }
+            if (product.status !== 'available') return res.status(400).json({ message: 'Produs indisponibil.' });
 
             product.status = 'claimed';
             await product.save();
+
+
+            await Claim.update(
+                { status: 'rejected' },
+                { where: { productId: claim.productId, id: { [Op.ne]: id }, status: 'pending' } }
+            );
         }
 
         claim.status = status;
         await claim.save();
-
         res.status(200).json(claim);
-    } catch (error) {
-        next(error);
-    }
+    } catch (error) { next(error); }
 };
 
 module.exports = {

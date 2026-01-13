@@ -4,6 +4,7 @@ const Product = require("../models/product")
 const ProductVisibility = require("../models/productVisibility")
 const Group = require("../models/group")
 const GroupMember = require("../models/groupMember")
+const User = require("../models/user")
 
 
 // GET /feed/products
@@ -42,31 +43,37 @@ const getProductsForMe = async (req, res, next) => {
             filterList.category = { [Op.in]: categories };
         }
 
-        const products = await Product.findAll(
-            {
-                where: filterList,
-                include: [
-                    {
-                        model: ProductVisibility,
-                        required:true,
-                        include: [
+        const products = await Product.findAll({
+            where: filterList,
+            status: 'available', 
+            ownerId: { [Op.ne]: req.user.id },
+            include: [
+                {
+                   
+                    model: User,
+                    attributes: ['username']
+                },
+                {
+                    
+                    model: ProductVisibility,
+                    required: true, 
+                    include: [
                         {
                             model: Group,
-                            required:true,
-                            include:[
+                            required: true,
+                            include: [
                                 {
                                     model: GroupMember,
                                     required: true,
-                                    where: {userId : req.user.id}
+                                    where: { userId: req.user.id } 
                                 }
                             ]
                         }
-                        ]
-                    }
-                ],
-                order:[["expiryDate","ASC"]]
-            }
-        )
+                    ]
+                }
+            ],
+            order: [["expiryDate", "ASC"]]
+        });
 
         return res.status(200).json(products)
 

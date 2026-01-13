@@ -1,4 +1,4 @@
-const { Product } = require('../models');
+const { Product , ProductVisibility} = require('../models');
 
 // POST /inventory/
 /*
@@ -74,6 +74,7 @@ const getAllProducts = async (req, res, next) => {
 
         const products = await Product.findAll({
             where: whereClause,
+            include: [ProductVisibility],
             order: orderClause
         });
 
