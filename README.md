@@ -1,4 +1,4 @@
-# Aplicatie web pentru prevenirea risipei de alimente
+#  Aplicatie web pentru prevenirea risipei de alimente
 
 ## Obiectiv
 Realizarea unei aplicatii web prin care utilizatorii pot sa ofere alimente pe care nu le mai consuma, contribuind la reducerea risipei alimentare si la incurajarea comportamentelor sustenabile intr-un mod bazat pe comunitate.
