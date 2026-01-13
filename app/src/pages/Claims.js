@@ -5,36 +5,41 @@ const Claims = () => {
     const [claims, setClaims] = useState([]);
 
     const fetchClaims = async () => {
-        const { data } = await API.get('/claims?as=owner'); //
+        const { data } = await API.get('/claims?as=owner');
         setClaims(data);
     };
 
     useEffect(() => { fetchClaims(); }, []);
 
     const updateStatus = async (claimId, status) => {
-        const { data } = await API.patch(`/claims/${claimId}`, { status }); //
+        await API.patch(`/claims/${claimId}`, { status });
         if (status === 'approved') {
-            alert(`Revendicare aprobată! Sună primitorul pentru detalii.`);
+            alert(`Revendicare aprobată!`);
         }
         fetchClaims();
     };
 
     return (
         <div className="container">
-            <h2>Cereri primite pentru produsele tale</h2>
-            {claims.map(c => (
-                <div key={c.id} style={{ border: '1px solid #ccc', padding: '10px', margin: '10px' }}>
-                    <p>Produs: <strong>{c.Product.name}</strong></p>
-                    <p>Utilizator: {c.User.username} ({c.User.phone})</p>
-                    <p>Status cerere: {c.status}</p>
-                    {c.status === 'pending' && (
-                        <>
-                            <button onClick={() => updateStatus(c.id, 'approved')}>Acceptă</button>
-                            <button onClick={() => updateStatus(c.id, 'rejected')}>Respinge</button>
-                        </>
-                    )}
-                </div>
-            ))}
+            <h2 style={{ color: 'var(--primary-green)' }}>Cererile tale (Donator)</h2>
+            <div className="grid">
+                {claims.length === 0 && <p>Nu ai cereri noi momentan.</p>}
+                {claims.map(c => (
+                    <div key={c.id} className="card">
+                        <p><strong>Produs:</strong> {c.Product?.name}</p>
+                        <p><strong>Utilizator:</strong> {c.User?.username}</p>
+                        <p><strong>Telefon:</strong> {c.User?.phone || 'Nespecificat'}</p>
+                        <p><strong>Status:</strong> <span className="tag" style={{ background: c.status === 'pending' ? 'orange' : 'var(--primary-green)' }}>{c.status}</span></p>
+                        
+                        {c.status === 'pending' && (
+                            <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+                                <button onClick={() => updateStatus(c.id, 'approved')} style={{ flex: 1 }}>Acceptă</button>
+                                <button onClick={() => updateStatus(c.id, 'rejected')} className="secondary" style={{ flex: 1 }}>Respinge</button>
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
         </div>
     );
 };

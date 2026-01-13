@@ -9,8 +9,8 @@ const Register = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await API.post('/auth/register', formData); //
-            alert("Cont creat! Acum te poți loga.");
+            await API.post('/auth/register', formData);
+            alert("Cont creat cu succes!");
             navigate('/login');
         } catch (err) {
             alert(err.response?.data?.message || "Eroare la înregistrare");
@@ -18,16 +18,18 @@ const Register = () => {
     };
 
     return (
-        <div className="container">
-            <h2>Înregistrare</h2>
-            <form onSubmit={handleSubmit}>
-                <input placeholder="Username" onChange={e => setFormData({...formData, username: e.target.value})} required />
-                <input type="email" placeholder="Email" onChange={e => setFormData({...formData, email: e.target.value})} required />
-                <input type="password" placeholder="Parolă" onChange={e => setFormData({...formData, password: e.target.value})} required />
-                <input placeholder="Telefon (ex: 0722123456)" onChange={e => setFormData({...formData, phone: e.target.value})} />
-                <textarea placeholder="Bio (scurtă descriere)" onChange={e => setFormData({...formData, bio: e.target.value})} />
-                <button type="submit">Creează Cont</button>
-            </form>
+        <div className="container" style={{ maxWidth: '500px', marginTop: '30px' }}>
+            <div className="card">
+                <h2 style={{ color: 'var(--primary-green)', textAlign: 'center' }}>Creează un cont eco</h2>
+                <form onSubmit={handleSubmit}>
+                    <input placeholder="Username unic" onChange={e => setFormData({...formData, username: e.target.value})} required />
+                    <input type="email" placeholder="Email" onChange={e => setFormData({...formData, email: e.target.value})} required />
+                    <input type="password" placeholder="Parolă" onChange={e => setFormData({...formData, password: e.target.value})} required />
+                    <input placeholder="Telefon (07xxxxxxxx)" onChange={e => setFormData({...formData, phone: e.target.value})} />
+                    <textarea placeholder="Bio scurt (ex: Îmi place să gătesc sustenabil)" onChange={e => setFormData({...formData, bio: e.target.value})} />
+                    <button type="submit" style={{ width: '100%', marginTop: '10px' }}>Înregistrare</button>
+                </form>
+            </div>
         </div>
     );
 };
