@@ -1,11 +1,10 @@
-const { Product , ProductVisibility} = require('../models');
+const { Product, ProductVisibility } = require('../models');
+const { Op } = require('sequelize');
 
 // POST /inventory/
 /*
- * Creates a new product in the inventory.
- * * This function allows an authenticated user to add a new item to their inventory.
- * It performs validation on required fields (name, category, quantity, expiry date)
- * and links the product to the current user (ownerId) derived from the auth token.
+ * Creează un produs nou în inventar.
+ * Acest produs este legat automat de utilizatorul logat (ownerId).
  */
 const createProduct = async (req, res, next) => {
     try {
@@ -13,16 +12,16 @@ const createProduct = async (req, res, next) => {
         let { name, category, quantity, expiryDate, notes } = req.body;
 
         if (!name || !name.trim()) {
-            return res.status(400).json({ message: "name is required" });
+            return res.status(400).json({ message: "numele este obligatoriu" });
         }
         if (!category || !category.trim()) {
-            return res.status(400).json({ message: "category is required" });
+            return res.status(400).json({ message: "categoria este obligatorie" });
         }
         if (!quantity || !quantity.trim()) {
-            return res.status(400).json({ message: "quantity is required" });
+            return res.status(400).json({ message: "cantitatea este obligatorie" });
         }
         if (!expiryDate) {
-            return res.status(400).json({ message: "expiryDate is required (YYYY-MM-DD)" });
+            return res.status(400).json({ message: "expiryDate este obligatoriu (YYYY-MM-DD)" });
         }
 
         const product = await Product.create({
@@ -31,7 +30,8 @@ const createProduct = async (req, res, next) => {
             category: category.trim(),
             quantity: quantity.trim(),
             expiryDate,                
-            notes: notes?.trim() || null
+            notes: notes?.trim() || null,
+            status: 'available' // Status implicit la creare
         });
 
         return res.status(201).json({
@@ -45,19 +45,25 @@ const createProduct = async (req, res, next) => {
 
 // GET /inventory/
 /*
- * Retrieves a list of all products.
- * * This function fetches the inventory with support for filtering and sorting.
- * Users can filter by 'category' or 'status' and sort the results by expiration date,
- * creation date, or name. The default sort order highlights items expiring soonest.
+ * Recuperează lista de produse ale utilizatorului.
+ * MODIFICARE: Filtrează implicit produsele pentru a afișa doar cele active ('available', 'claimed').
+ * Produsele 'consumed' sau 'trashed' rămân în DB dar nu apar în inventarul curent.
  */
 const getAllProducts = async (req, res, next) => {
     try {
         const { category, status, sort, order } = req.query;
 
-        const whereClause = {ownerId: req.user.id};
+        // Logica de filtrare pentru "Active View"
+        const whereClause = {
+            ownerId: req.user.id,
+            status: { [Op.in]: ['available', 'claimed'] } // Filtru implicit pentru Soft Delete
+        };
+
         if (category) {
             whereClause.category = category;
         }
+
+        // Dacă utilizatorul cere în mod explicit un anumit status (ex: pentru statistici), suprascriem filtrul implicit
         if (status) {
             whereClause.status = status;
         }
@@ -85,11 +91,6 @@ const getAllProducts = async (req, res, next) => {
 };
 
 // GET /inventory/:id
-/*
- * Retrieves details for a specific product.
- * * This function fetches a single product by its unique ID.
- * It returns the product object if found, or a 404 error if the ID does not exist.
- */
 const getProductById = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -112,10 +113,8 @@ const getProductById = async (req, res, next) => {
 
 // PATCH /inventory/:id
 /*
- * Updates an existing product.
- * * This function modifies the details of a specific product identified by ID.
- * It uses the data provided in the request body to update the corresponding fields
- * in the database.
+ * Actualizează un produs. 
+ * Folosită și pentru "Soft Delete" prin schimbarea statusului în 'consumed' sau 'trashed'.
  */
 const updateProduct = async (req, res, next) => {
     try {
@@ -140,9 +139,9 @@ const updateProduct = async (req, res, next) => {
 
 // DELETE /inventory/:id
 /*
- * Deletes a product from the inventory.
- * * This function permanently removes a product record from the database
- * based on the provided ID. It returns a 204 No Content status upon success.
+ * Șterge DEFINITIV un produs.
+ * Recomandat să fie folosită doar pentru corectarea greșelilor de introducere, 
+ * nu pentru fluxul normal de consum/risipă.
  */
 const deleteProduct = async (req, res, next) => {
     try {

@@ -1,33 +1,27 @@
-const { Op } = require("sequelize")
-
-const Product = require("../models/product")
-const ProductVisibility = require("../models/productVisibility")
-const Group = require("../models/group")
-const GroupMember = require("../models/groupMember")
-const User = require("../models/user")
-
+const { Op } = require("sequelize");
+const Product = require("../models/product");
+const ProductVisibility = require("../models/productVisibility");
+const Group = require("../models/group");
+const GroupMember = require("../models/groupMember");
+const User = require("../models/user");
 
 // GET /feed/products
-/*
- * Retrieves the personalized feed of products for the current user.
- * * This function fetches products that are visible to the user. The complex query enforces 
- * visibility rules by joining tables to ensure the user is a member of the group 
- * where the product was shared (Product -> ProductVisibility -> Group -> GroupMember).
- * * It supports filtering by owner, status, category, and expiration date (range), 
- * and sorts the results by expiration date (sooner first).
- */
 const getProductsForMe = async (req, res, next) => {
     try {
-        const { ownerId, category, expiryBefore, expiryAfter, status } = req.query
+        const { ownerId, category, expiryBefore, expiryAfter, status } = req.query;
 
-        const filterList = {}
+        // Inițializăm filtrele de bază pentru Feed
+        const filterList = {
+            status: status || 'available', // Implicit arătăm doar ce este disponibil
+            ownerId: { [Op.ne]: req.user.id } // Excludem propriile produse din feed-ul de prieteni
+        };
 
-        if (ownerId)
-            filterList.ownerId = ownerId
+        // Dacă utilizatorul a cerut un anumit owner (ex: dintr-un grup specific)
+        if (ownerId) {
+            filterList.ownerId = ownerId;
+        }
 
-        if (status)
-            filterList.status = status
-
+        // Filtrare după data de expirare
         if (expiryBefore || expiryAfter) {
             filterList.expiryDate = {};
             if (expiryBefore) {
@@ -38,23 +32,20 @@ const getProductsForMe = async (req, res, next) => {
             }
         }
 
+        // Filtrare după categorii multiple
         if (category) {
             const categories = category.split(",").map(c => c.trim());
             filterList.category = { [Op.in]: categories };
         }
 
         const products = await Product.findAll({
-            where: filterList,
-            status: 'available', 
-            ownerId: { [Op.ne]: req.user.id },
+            where: filterList, // Acum filterList conține status: 'available'
             include: [
                 {
-                   
                     model: User,
                     attributes: ['username']
                 },
                 {
-                    
                     model: ProductVisibility,
                     required: true, 
                     include: [
@@ -75,13 +66,11 @@ const getProductsForMe = async (req, res, next) => {
             order: [["expiryDate", "ASC"]]
         });
 
-        return res.status(200).json(products)
-
-
+        return res.status(200).json(products);
     }
     catch (error) {
-        next(error)
+        next(error);
     }
-}
+};
 
-module.exports = { getProductsForMe }
+module.exports = { getProductsForMe };

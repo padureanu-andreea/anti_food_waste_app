@@ -54,18 +54,19 @@ const generateInstagramContent = async (req, res, next) => {
             return res.status(404).json({ message: "Product does not exist." });
         }
 
-        // check status
         if (product.status !== 'available') {
             return res.status(400).json({ message: "Only available products can be shared." });
         }
 
-        const message = `Donez ${product.name}! Expiră la: ${product.expiryDate}. Contactează-mă pe AntiFoodWaste App!  #StopFoodWaste`;
+        const message = `Donez ${product.name}! Expiră la: ${product.expiryDate}. Contactează-mă pe AntiFoodWaste App! #StopFoodWaste`;
 
         res.status(200).json({
             platform: 'instagram',
             productName: product.name,
             generatedMessage: message,
-            instruction: "Instagram nu permite postarea directă din web. Copiază acest text."
+            // Adăugăm URL-ul către Instagram și instrucțiunea clară
+            shareUrl: "https://www.instagram.com/", 
+            instruction: "Instagram nu permite postarea automată. Mesajul a fost copiat! Lipsește-l în descrierea postării tale."
         });
 
     } catch (error) {
